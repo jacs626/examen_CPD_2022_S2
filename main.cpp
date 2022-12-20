@@ -2,7 +2,6 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
-#include <typeinfo>
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -51,8 +50,7 @@ double predict(double x, double m, double b) {
   return m * x + b;
 }
 
-int di(string iso_date) {
-  // Fecha en formato ISO 8601
+int date_to_int(string iso_date) {
 
   // Extrae el año, mes y día de la fecha
   int year = stoi(iso_date.substr(0, 4));
@@ -85,26 +83,27 @@ int di(string iso_date) {
 
 
 int main() {
-  cout << "Ingrese la fecha en formato ISO 8601 (aaaa-mm-dd): " << endl;
-  string fechaStr = "2022-12-20";
-  //cin >> fechaStr;
+  cout << "Ingrese la fecha en formato ISO 8601 (aaaa-mm-dd): ";
+  string fechaStr; 
+  cin >> fechaStr;
+
   // Habilita el uso de OpenMP
   #pragma omp parallel
   {
     // Establece el número de hilos a utilizar en el programa
-    //omp_set_num_threads(2);
+    omp_set_num_threads(2);
   }
 
   // Abre el archivo CSV para su lectura
   ifstream file("datos_examen.csv");
   if (!file.is_open()) {
-    std::cerr << "Error: no se pudo abrir el archivo" << std::endl;
+    cerr << "Error: no se pudo abrir el archivo" << std::endl;
     return 1;
   }
 
   // Vector para almacenar las variables independientes (fechas)
   vector<double> X;
-  // Vector para almacenar las variables dependientes (enteros)
+  // Vector para almacenar las variables dependientes (accidentes)
   vector<double> Y;
 
   // Lee línea por línea del archivo
@@ -115,9 +114,10 @@ int main() {
     // Divide la línea en campos separados por ';'
     istringstream line_stream(line);
     string field;
+    //Nos saltamos la primera fila de cabecera
     getline(line_stream, field, ';');
     // Almacena el primer campo (fecha) en el vector de variables independientes
-    X.push_back(di(field));
+    X.push_back(date_to_int(field));
     // Lee el segundo campo (entero) y lo almacena en el vector de variables dependientes
     int dependent_var;
     line_stream >> dependent_var;
@@ -126,22 +126,13 @@ int main() {
 
   // Cierra el archivo
   file.close();
-
-  // Vector de pruebas variables independientes (x)
-  //vector<double> x = {1, 2, 3, 4, 5};
-  // Vector de pruebas variables dependientes (y)
-  //vector<double> y = {2,4,6,8,10};
   
   // Calcula el coeficiente de la variable independiente (m) y el término independiente (b) para la regresión lineal
   double m = calc_m(X, Y);
   double b = calc_b(X, Y, m);
 
-  // Muestra los valores de m y b en pantalla
-  //cout << "m: " << m << endl;
-  //cout << "b: " << b << endl;
-
-  // Predice el valor de y para x = 6 utilizando la regresión lineal
-  double x_pred = di(fechaStr);
+  // Predice el valor de y para x = fecha ingresada utilizando la regresión lineal
+  double x_pred = date_to_int(fechaStr);
   double y_pred = predict(x_pred, m, b);
   cout << "Para la fecha: " << fechaStr << " Se esperan : " << y_pred << " accidentes"<< endl;
 
